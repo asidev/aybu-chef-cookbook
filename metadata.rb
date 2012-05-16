@@ -1,0 +1,15 @@
+maintainer       "Asidev s.r.l."
+maintainer_email "cookbooks@asidev.com"
+license          "Apache 2.0"
+description      "Installs/Configures aybu"
+long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
+version          "0.0.1"
+
+depends "acl"
+depends "database"
+depends "hg"
+depends "nginx"
+depends "openssl"
+depends "python"
+depends "supervisor"
+depends "uwsgi"
