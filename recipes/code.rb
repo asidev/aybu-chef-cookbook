@@ -26,8 +26,8 @@ grp = node["acl"]["hosting"]["group"]
 python_virtualenv venv do
   action :create
   no_site_packages true
+  owner usr
   notifies :run, "script[install_extra_venv_software]", :immediately
-  
 end
 
 script "install_extra_venv_software" do
@@ -38,17 +38,6 @@ script "install_extra_venv_software" do
     pip install -U pip
     pip install psycopg2
     pip install http://projects.unbit.it/downloads/uwsgi-lts.tar.gz
-  EOH
-  notifies :run, "script[fix_venv_perms]", :immediately
-  action :nothing
-end
-
-script "fix_venv_perms" do
-  interpreter "bash"
-  user "root"
-  cwd "/"
-  code <<-EOH
-    chgrp -R #{grp} #{venv_path}
   EOH
   action :nothing
 end
