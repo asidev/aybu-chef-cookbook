@@ -25,9 +25,6 @@ venv_path = "#{node[:python][:virtualenvs_dir]}"
 node.set_unless['aybu']['system_user_password'] = secure_password
 root = node['aybu']['rootdir']
 
-package "libzmq-dev"
-package "imagemagick"
-
 user usr do
   action :create
   comment "AyBu"

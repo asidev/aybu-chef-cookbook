@@ -50,7 +50,9 @@ end
 
 %w{aybu-core aybu-themes-pyramid aybu-website aybu-controlpanel aybu-manager aybu-manager-cli}.each do |repo|
   checkout = "#{node['aybu']['hg']['url']}/#{repo}"
-  hg "#{code_dir}/#{repo}" do
+  pkg_name = repo.split("-")[0..1].join("_")
+  repo_path = "#{code_dir}/#{repo}"
+  hg repo_path do
     repository checkout
     reference node['aybu']['hg']['reference']
     key "#{node['aybu']['rootdir']}/.ssh/id_rsa"
@@ -62,10 +64,11 @@ end
   script "install_#{repo}" do
     interpreter "bash"
     user "root"
-    cwd "#{code_dir}/#{repo}"
+    cwd repo_path
     code <<-EOH
       #{venv_path}/bin/pip install --extra-index-url #{chishop} -e ./
     EOH
+    not_if "#{venv_path}/bin/pip freeze | grep #{pkg_name}"
     action :run
   end
 end
