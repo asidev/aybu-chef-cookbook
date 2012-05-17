@@ -30,10 +30,18 @@ postgresql_database_user "aybu_manager" do
 	connection connection_info
 	password node['aybu']['aybu_manager_db_password']
 	action :create
+  notifies :query, "postgresql_database[grant_super]", :immediately
 end
 
 postgresql_database "aybu_manager" do
   connection connection_info
   action :create
   owner "aybu_manager"
+end
+
+postgresql_database "grant_super" do
+  database_name "aybu_manager"
+  connection connection_info
+  action :nothing
+  sql "ALTER USER aybu_manager WITH SUPERUSER CREATEDB CREATEROLE REPLICATION"
 end
