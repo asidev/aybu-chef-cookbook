@@ -16,8 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package "redis-server"
-
+include_recipe "redis::server"
 restart_nginx = "#{node['aybu']['rootdir']}/bin/restart_nginx.sh"
 
 cookbook_file restart_nginx do
