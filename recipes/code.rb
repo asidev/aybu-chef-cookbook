@@ -23,47 +23,50 @@ chishop = "http://chishop.asidev.net/pypi"
 usr = node['aybu']['system_user']
 grp = node["acl"]["hosting"]["group"]
 
+
+package "libzmq-dev"
+package "imagemagick"
+package "libenchant-dev"
+
 python_virtualenv venv do
   action :create
-  no_site_packages true
-  owner usr
-  notifies :run, "script[install_extra_venv_software]", :immediately
 end
 
-script "install_extra_venv_software" do
-  interpreter "bash"
-  user usr
-  code <<-EOH
-    source #{venv_path}/bin/activate
-    pip install -U pip
-    pip install psycopg2
-    pip install http://projects.unbit.it/downloads/uwsgi-lts.tar.gz
-  EOH
-  action :nothing
+python_pip "pip" do
+  action :upgrade
+  virtualenv venv_path
+end
+
+python_pip "psycopg2" do
+  action :install
+  virtualenv venv_path
+end
+
+python_pip "uWSGI" do
+  action :install
+  version node['aybu']['uwsgi_version']
+  virtualenv venv_path
 end
 
 %w{aybu-core aybu-themes-pyramid aybu-website aybu-controlpanel aybu-manager aybu-manager-cli}.each do |repo|
   checkout = "#{node['aybu']['hg']['url']}/#{repo}"
   hg "#{code_dir}/#{repo}" do
     repository checkout
-    reference node['aybu']['hg']['branch']
+    reference node['aybu']['hg']['reference']
     key "#{node['aybu']['rootdir']}/.ssh/id_rsa"
     action :clone
     owner usr
     group grp
-    not_if "test -d #{checkout}"
-    notifies :run, "script[install_#{repo}]", :immediately
   end
 
   script "install_#{repo}" do
     interpreter "bash"
-    user usr
-    cwd checkout
+    user "root"
+    cwd "#{code_dir}/#{repo}"
     code <<-EOH
-      source #{venv_path}/bin/activate
-      pip install --extra-index-url #{chishop} -e ./
+      #{venv_path}/bin/pip install --extra-index-url #{chishop} -e ./
     EOH
-    action :nothing
+    action :run
   end
 end
 

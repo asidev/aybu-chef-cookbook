@@ -21,11 +21,12 @@ include_recipe "acl::dedicated_hosting"
 
 grp = node["acl"]["hosting"]["group"]
 usr = node['aybu']['system_user']
+venv_path = "#{node[:python][:virtualenvs_dir]}"
 node.set_unless['aybu']['system_user_password'] = secure_password
 root = node['aybu']['rootdir']
 
 package "libzmq-dev"
-package "mercurial"
+package "imagemagick"
 
 user usr do
   action :create
@@ -35,7 +36,17 @@ user usr do
   home root
   shell "/bin/bash"
   password node['aybu']['user_password']
-  supports :manage_home => false 
+  supports :manage_home => true
+  notifies :run, "script[setfacl-#{venv_path}-aybu]", :immediately
+end
+
+script "setfacl-#{venv_path}-aybu" do
+  action :nothing
+  interpreter "bash"
+  user "root"
+  code <<-EOH
+  setfacl -R -m default:user:#{usr}:rwx -m user:#{usr}:rwx #{venv_path}
+  EOH
 end
 
 directory "#{root}/.ssh" do
