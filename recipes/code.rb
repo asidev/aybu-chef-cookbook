@@ -17,7 +17,7 @@
 # limitations under the License.
 
 code_dir = "#{node['aybu']['rootdir']}/code"
-venv = 'aybu'
+venv = node['aybu']['venv']
 venv_path = "#{node[:python][:virtualenvs_dir]}/#{venv}"
 chishop = "http://chishop.asidev.net/pypi"
 usr = node['aybu']['system_user']

@@ -1,0 +1,161 @@
+[app:aybu-manager]
+use = egg:aybu-manager
+
+# development and debugging
+# SET EVERYTHING TO FALSE IN PRODUCTION
+debug_authorization = false
+debug_notfound = false
+debug_routematch = false
+debug_templates = false
+reload_templates = false
+reload_assets = false
+debug = false
+
+sqlalchemy.url = postgresql://aybu_manager:<%= @database_password %>@localhost:5432/aybu_manager
+sqlalchemy.echo = false
+
+authentication.realm = 'Aybu Manager'
+api_url = <%= node['aybu']['api_http'] %>://<%= node['aybu']['api_domain'] %>
+api_ssl = False
+
+# templating
+mako.strict_undefined = true
+# mako.module_directory = --> if omitted then memory
+
+instance.database.prefix = <%= node['aybu']['database_prefix'] %>
+instance.database.type = postgresql
+# comment out for default driver
+#instance.database.driver = oursql
+instance.database.port = 5432
+
+os.user = <%= node['aybu']['system_user'] %>
+os.group = <%= node['aybu']['system_group'] %>
+os.smtp_host = <%= node['aybu']['smtp_host'] %>
+os.smtp_port = <%= node['aybu']['smtp_port'] %>
+
+paths.root = <%= node['aybu']['rootdir'] %>
+paths.configs = %(paths.root)s/configs
+paths.configs.uwsgi = %(paths.configs)s/uwsgi
+paths.configs.nginx = %(paths.configs)s/nginx
+paths.configs.supervisor = %(paths.configs)s/supervisor
+paths.sites = %(paths.root)s/sites
+paths.archives = %(paths.root)s/archives
+paths.cgroups = /sys/fs/cgroup
+paths.cgroups.controllers = <%= node['aybu']['cgroup_controllers'].join(", ") %>
+paths.cgroups.relative_path = <%= node['aybu']['cgroup_rel_path'] %>
+paths.logs = %(paths.root)s/logs
+paths.run = %(paths.root)s/run
+paths.virtualenv.default = <%= node['aybu']['venv'] %>
+paths.virtualenv.base = <%= node["python"]["virtualenvs_dir"] %>
+
+zmq.queue_addr = tcp://<%= @zmq_conf['queue_addr'] %>:<%= @zmq_conf['queue_port'] %>
+zmq.daemon_addr = tcp://<%= @zmq_conf['daemon_addr'] %>:<%= @zmq_conf['daemon_port'] %>
+zmq.status_pub_addr = tcp://<%= @zmq_conf['status_pub_addr'] %>:<%= @zmq_conf['status_pub_port'] %>
+zmq.timeout = <%= @zmq_conf['timeout'] %>
+zmq.result_ttl = <%= @zmq_conf['result_ttl'] %>
+
+redis.host = <%= @node['aybu']['redis']['addr'] %>
+redis.port = <%= @node['aybu']['redis']['port'] %>
+
+uwsgi.fastrouter.address = <%= @uwsgi_conf['fastrouter']['addr'] %>
+uwsgi.fastrouter.base_port = <%= @uwsgi_conf['fastrouter']['base_port'] %>
+uwsgi.subscription_server.address = <%= @uwsgi_conf['subscription_server']['addr'] %>
+uwsgi.subscription_server.base_port = <%= @uwsgi_conf['subscription_server']['base_port'] %>
+uwsgi.stats_server.emperor_base_port = <%= @uwsgi_conf['stats_server']['emperor_base_port'] %>
+uwsgi.stats_server.fastrouter_base_port = <%= @uwsgi_conf['stats_server']['fastrouter_base_port'] %>
+uwsgi.stats_server.instance_base_port = <%= @uwsgi_conf['stats_server']['instance_base_port'] %>
+uwsgi.stats_server.address = <%= @uwsgi_conf['stats_server']['addr'] %>
+uwsgi.bin = %(paths.virtualenv.base)s/%(paths.virtualenv.default)s/bin/uwsgi
+
+nginx.port = <%= node["nginx"]["default_vhost_port"] %>
+nginx.restart.cmd = <%= @restart_nginx %>
+supervisor.update.cmd = /usr/local/bin/supervisorctl update
+supervisor.command.prefix = <%= node['aybu']['supervisor_prefix'] %>
+proxy.address = <%= node['aybu']['varnish']['address'] %>
+proxy.port = <%= node['aybu']['varnish']['port'] %>
+# True or False: must be python bool literals
+proxy.enabled = True
+
+[uwsgi]
+instance_dir = <%= node['aybu']['rootdir'] %>/sites/<%= node['aybu']['api_domain'] %>
+chdir = %(instance_dir)
+socket = <%= node['aybu']['rootdir'] %>/run/manager.sock
+module = main
+chmod-socket=664
+master = true
+post-buffering = <%= @uwsgi_conf['options']['post-buffering'] %>
+processes = <%= @uwsgi_conf['options']['processes'] %>
+threads = <%= @uwsgi_conf['options']['threads'] %>
+idle = <%= @uwsgi_conf['options']['idle'] %>
+reload-on-rss = <%= @uwsgi_conf['options']['reload_on_rss'] %>
+uid = <%= node['aybu']['system_user'] %>
+gid = <%= node['aybu']['system_group'] %>
+vacuum = true
+no-orphan = true
+single-interpreter = true
+pyhome = <%= node["python"]["virtualenvs_dir"] %>/<%= node['aybu']['venv'] %>
+<% node['aybu']['cgroup_controllers'].each do |ctrl| -%>
+cgroup = /sys/fs/cgroup/<%= ctrl %><%= node['aybu']['cgroup_rel_path'] %>/<%= node['aybu']['api_domain'] %>
+<% end -%>
+logto = <%= node['aybu']['rootdir'] %>/logs/<%= node['aybu']['api_domain'] %>/uwsgi.log
+
+[pipeline:main]
+# add  egg:WebError#evalerror to the pipeline for debugging
+pipeline =
+    aybu-manager
+
+[server:main]
+use = egg:Paste#http
+host = 0.0.0.0
+port = 6543
+
+[alembic]
+script_location = <%= node['aybu']['rootdir'] %>/code/aybu-manager/migrations
+sqlalchemy.url = postgresql://aybu_manager:<%= @database_password %>@localhost:5432/aybu_manager
+sqlalchemy.echo = false
+
+[pshell]
+setup = aybu.manager.utils.pshell:setup
+
+[loggers]
+keys = root, aybu, alembic, sqlalchemy
+
+[handlers]
+keys = console, file
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = INFO
+handlers = file
+
+[logger_aybu]
+level = DEBUG
+handlers =
+qualname = aybu
+
+[logger_sqlalchemy]
+level = WARN
+handlers = console
+qualname = sqlalchemy.engine
+
+[logger_alembic]
+level = INFO
+handlers =
+qualname = alembic
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[handler_file]
+class = handlers.RotatingFileHandler
+level = NOTSET
+formatter = generic
+args = ('<%= node['aybu']['rootdir'] %>/logs/<%= node['aybu']['api_domain'] %>/application.log', 'a', 10485760, 10)
+
+[formatter_generic]
+format = %(asctime)s %(levelname)-5.5s [%(name)s][%(threadName)s] %(message)s
