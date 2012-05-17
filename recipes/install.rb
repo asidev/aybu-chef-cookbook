@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: aybu
-# Recipe:: default
+# Recipe:: install
 #
 # Copyright 2012, Asidev s.r.l.
 #
@@ -16,19 +16,3 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-include_recipe "aybu::user"
-include_recipe "aybu::system"
-include_recipe "aybu::database"
-include_recipe "aybu::code"
-include_recipe "aybu::install"
-
-# save passwords to chef-server
-unless Chef::Config[:solo]
-  ruby_block "save node data" do
-    block do
-      node.save
-    end
-    action :create
-  end
-end

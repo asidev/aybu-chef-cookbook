@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: aybu
-# Recipe:: default
+# Recipe:: system
 #
 # Copyright 2012, Asidev s.r.l.
 #
@@ -16,19 +16,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+package "redis-server"
 
-include_recipe "aybu::user"
-include_recipe "aybu::system"
-include_recipe "aybu::database"
-include_recipe "aybu::code"
-include_recipe "aybu::install"
+restart_nginx = "#{node['aybu']['rootdir']}/bin/restart_nginx.sh"
 
-# save passwords to chef-server
-unless Chef::Config[:solo]
-  ruby_block "save node data" do
-    block do
-      node.save
-    end
-    action :create
-  end
+cookbook_file restart_nginx do
+  source "restart_nginx.sh"
+  owner "root"
+  group "root"
+  mode "0775"
 end
+
+template "/etc/sudoers.d/aybu" do
+  mode 0440
+  source "sudoers.erb"
+  owner "root"
+  group "root"
+  variables(
+    :user => node['aybu']['system_user'],
+    :script => restart_nginx
+  )
+end
+

@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: aybu
-# Recipe:: default
+# Recipe:: database
 #
 # Copyright 2012, Asidev s.r.l.
 #
@@ -16,19 +16,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+::Chef::Recipe.send(:include, Opscode::OpenSSL::Password)
+node.set_unless['aybu']['aybu_manager_db_password'] = secure_password
 
-include_recipe "aybu::user"
-include_recipe "aybu::system"
-include_recipe "aybu::database"
-include_recipe "aybu::code"
-include_recipe "aybu::install"
+connection_info = {
+  :host => "127.0.0.1", 
+  :port => 5432, 
+  :username => 'postgres', 
+  :password => node['postgresql']['password']['postgres']
+}
 
-# save passwords to chef-server
-unless Chef::Config[:solo]
-  ruby_block "save node data" do
-    block do
-      node.save
-    end
-    action :create
-  end
+postgresql_database_user "aybu_manager" do
+	connection connection_info
+	password node['aybu']['aybu_manager_db_password']
+	action :create
+end
+
+postgresql_database "aybu_manager" do
+  connection connection_info
+  action :create
+  owner "aybu_manager"
 end
