@@ -37,3 +37,23 @@ template "/etc/sudoers.d/aybu" do
   )
 end
 
+directory node['aybu']['backup_dir'] do
+  owner "root"
+  group "root"
+  mode "0755"
+  action :create
+end
+
+template "/usr/local/bin/dump_aybu_databases.sh" do
+  owner "root"
+  group "root"
+  mode "0755"
+  source "dump_aybu_databases.sh.erb"
+end
+
+cron "dump_aybu_databases" do
+  hour "3"
+  minute "0"
+  command "/usr/local/bin/dump_aybu_databases.sh -d #{node['aybu']['backup_dir']} &> /var/log/dump_aybu_databases.log"
+end
+

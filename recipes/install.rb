@@ -20,6 +20,7 @@ api_domain = node['aybu']['api_domain']
 root = node['aybu']['rootdir']
 sites = "#{root}/sites"
 logs = "#{root}/logs"
+configs = "#{root}/configs"
 api_dir = "#{sites}/#{api_domain}"
 api_logs_dir = "#{logs}/#{api_domain}"
 grp = node["acl"]["hosting"]["group"]
@@ -86,6 +87,31 @@ file "#{root}/code/aybu-manager/.installed__do_not_remove" do
   mode "0600"
 end
 
+directory "#{configs}/nginx" do
+  owner usr
+  group grp
+  mode 0775
+  action :create
+end
+
+directory "#{configs}/uwsgi" do
+  owner usr
+  group grp
+  mode 0775
+  action :create
+end
+
+directory "#{configs}/supervisor" do
+  owner usr
+  group grp
+  mode 0775
+  action :create
+end
+
+link "#{node['supervisor']['dir']}/aybu" do
+  to "#{configs}/supervisor"
+end
+
 supervisor_program "api_rest" do
   command "#{venv_path}/bin/uwsgi --ini-paste #{config_file}"
   stopsignal :INT
@@ -114,4 +140,23 @@ firewall_rule "aybu_manager_zmq" do
     port node['aybu']['zmq']['status_pub_port']
     action :allow
     protocol :tcp
+end
+
+template "#{configs}/nginx/api.aybu.it.conf" do
+  source "manager_api_nginx.conf.erb"
+  owner usr
+  group group
+  mode 0644
+  notifies :reload, "service[nginx]"
+end
+
+script "set_venv_acl_aybu" do
+  interpreter "bash"
+  user "root"
+  cwd "/tmp"
+  code <<-EOH
+    find #{venv_path} -type d -print0 | xargs -0 setfacl -m user:#{usr}:rwx -m default:user:#{usr}:rwx
+    find #{venv_path} -type f -print0 | xargs -0 setfacl -m user:#{usr}:rwx
+  EOH
+  action :run
 end

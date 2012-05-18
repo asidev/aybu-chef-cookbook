@@ -30,16 +30,16 @@ postgresql_database_user "aybu_manager" do
 	connection connection_info
 	password node['aybu']['aybu_manager_db_password']
 	action :create
-  notifies :query, "postgresql_database[grant_super]", :immediately
 end
 
 postgresql_database "aybu_manager" do
   connection connection_info
   action :create
   owner "aybu_manager"
+  notifies :query, "postgresql_database[grant_super_aybu_manager]", :immediately
 end
 
-postgresql_database "grant_super" do
+postgresql_database "grant_super_aybu_manager" do
   database_name "aybu_manager"
   connection connection_info
   action :nothing

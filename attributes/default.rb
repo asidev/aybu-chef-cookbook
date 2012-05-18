@@ -9,6 +9,7 @@ default['aybu']['uwsgi_version'] = "1.2.3"
 default['aybu']['api_domain'] = 'api.aybu.it'
 default['aybu']['api_http'] = "https"
 default['aybu']['database_prefix'] = 'aybu_'
+default['aybu']['backup_dir'] = "/var/backups/aybu"
 default['aybu']['smtp_host'] = "localhost"
 default['aybu']['smtp_port'] = "25"
 default['aybu']['cgroup_rel_path'] = "/sites/aybu"
@@ -45,3 +46,8 @@ default['aybu']['uwsgi']['options']['reload-on-rss'] = 96
 default['aybu']['varnish']['address'] = "127.0.0.1"
 default['aybu']['varnish']['port'] = "80"
 
+# override various attributes
+set['supervisor']['admin_group'] = "#{node['aybu']['system_group']}"
+set['nginx']['additional_includes'] = ["#{node['aybu']['rootdir']}/configs/nginx/*.conf"]
+set['nginx']['user'] = node['aybu']['system_user']
+set['nginx']['group'] = node['aybu']['system_group']

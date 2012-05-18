@@ -1,0 +1,26 @@
+server {
+	listen 443;
+
+	server_name <%= node['aybu']['api_domain'] %>;
+	access_log off;
+	error_log <%= node['aybu']['rootdir'] %>/logs/<%= node['aybu']['api_domain'] %>/nginx.error.log;
+
+	ssl on;
+	ssl_certificate /etc/ssl/certs/ssl-cert-snakeoil.pem;
+	ssl_certificate_key /etc/ssl/private/ssl-cert-snakeoil.key;
+	
+
+	if ($host != "<%= node['aybu']['api_domain'] %>") {
+		return 404;
+		break;
+	}
+	
+	location /favicon.ico {
+		return 404;
+	}
+	
+	location / {
+		include /etc/nginx/uwsgi_params;
+		uwsgi_pass unix://<%= node['aybu']['rootdir'] %>/run/manager.sock;
+	}
+}

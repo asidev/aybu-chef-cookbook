@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+
+import os
+import sys
+
+
+MEM_KEYS = ("cache", "rss", "mapped_file", "swap",
+            "inactive_anon", "active_anon")
+CGROUP = "/sys/fs/cgroup/memory/<%= node['aybu']['cgroup_rel_path'] %>"
+
+
+def count_lines_in_file(filename):
+    with open(filename) as f:
+        lines = 0
+        buf_size = 1024 * 1024
+        read_f = f.read # loop optimization
+
+        buf = read_f(buf_size)
+        while buf:
+            lines += buf.count('\n')
+            buf = read_f(buf_size)
+
+    return lines
+
+
+def account_memory(stats, dir_):
+
+    with open(os.path.join(dir_, "memory.stat")) as f:
+        for line in f:
+            line = line.strip()
+            key, value = line.split()
+            if key in MEM_KEYS:
+                if not key in stats:
+                    stats[key] = 0
+                stats[key] += int(value)
+
+    with open(os.path.join(dir_, "memory.usage_in_bytes")) as f:
+        for line in f:
+            stats['usage_in_bytes'] += int(line.strip())
+
+
+def account_instances(cgroup):
+    dirs = [d for d in os.listdir(cgroup)
+             if os.path.isdir(os.path.join(cgroup, d))
+             and "." in d]
+
+    sites = set()
+    active = set()
+    memory_stats = dict(usage_in_bytes=0)
+
+    for s in dirs:
+        dir_ = os.path.join(cgroup, s)
+        num_tasks = count_lines_in_file(os.path.join(dir_, "tasks"))
+        if not num_tasks:
+            continue
+        sites.add(dir_)
+        if num_tasks > 1:
+            active.add(dir_)
+
+        account_memory(memory_stats, os.path.join(dir_))
+
+    # account_memory(memory_stats, os.path.join(CGROUP, "aybu_emperor"))
+
+
+    return sites, active, memory_stats
+
+
+def output_counts(sites, active):
+    print "<<<aybu_instance_stats>>>"
+    print "active\t%d" % (len(active))
+    print "total\t%d" % (len(sites))
+
+
+def output_total_mem(stats):
+    print "<<<aybu_memory_stats>>>"
+    for key in MEM_KEYS:
+        print "%s\t%d" % (key, stats[key])
+    print "usage_in_bytes\t%d" % (stats["usage_in_bytes"])
+
+
+
+if __name__ == '__main__':
+
+    if not os.path.isdir(CGROUP):
+        sys.exit()
+    sites, active, memstats = account_instances(CGROUP)
+    output_counts(sites, active)
+    output_total_mem(memstats)

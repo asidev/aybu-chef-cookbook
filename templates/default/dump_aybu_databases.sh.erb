@@ -1,0 +1,59 @@
+#!/bin/bash
+
+set -u
+set -e
+function error() {
+	echo "$@" >&2
+	exit 1
+}
+
+function usage() {
+	echo "$(basename $(realpath $0)) [-h] -d <backup_directory>"
+	[ $# -gt 0 ] && error "$@"
+	exit 0
+}
+
+set +u
+if [ -z $AYBU_DATABASE_DUMP_DIR ];
+then
+	backup_dir=""
+else
+	backup_dir=$AYBU_DATABASE_DUMP_DIR
+fi
+set -u
+
+while getopts ":d:" opt; do
+	case $opt in 
+	h)
+		usage
+		;;
+	d)
+		backup_dir=$OPTARG
+		;;
+	\?)
+		error "Invalid option -$OPTARG"
+		;;
+	:)
+		error "-$OPTARG requires an argument"
+		;;
+	esac
+done
+
+[ -z $backup_dir ] && usage "missing backup dir"
+[ -d $backup_dir ] || error "cannot find backup dir $backup_dir"
+
+psql=$(which psql)
+pg_dump=$(which pg_dump)
+sudo=$(which sudo)
+psql_get="$sudo -u postgres $psql aybu_manager -A -t "
+
+ids=$(echo "select id from instances order by id asc" | $psql_get)
+for id in $ids; do
+   database="<%= node['aybu']['database_prefix'] %>$id"
+   domain=$(echo "select domain from instances where id=$id" | $psql_get)
+   filename="aybu__${id}_${domain}.sql.xz"
+   filepath="$backup_dir/$filename"
+   echo "Dumping database $database to $filepath"
+   sudo -u postgres $pg_dump $database | xz -c -0 - > $filepath
+done
+sudo -u postgres $pg_dump aybu_manager | xz -c -0 - > $backup_dir/aybu_manager.sql.xz
