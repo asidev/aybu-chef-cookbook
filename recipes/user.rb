@@ -24,6 +24,7 @@ usr = node['aybu']['system_user']
 venv_path = "#{node[:python][:virtualenvs_dir]}"
 node.set_unless['aybu']['system_user_password'] = secure_password
 root = node['aybu']['rootdir']
+nginx_usr = node['nginx']['user']
 
 user usr do
   action :create
@@ -37,9 +38,13 @@ user usr do
   notifies :run, "script[setfacl-#{venv_path}-aybu]", :immediately
 end
 
-group grp do
-  action :modify
-  members [node['nginx']['user']]
+script "add_nginx_user_to_group" do
+  interpreter "bash"
+  user "root"
+  cwd "/root"
+  code <<-EOH
+    usermod -a -G #{grp} #{nginx_usr}
+  EOH
 end
 
 
