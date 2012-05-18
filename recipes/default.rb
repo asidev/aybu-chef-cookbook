@@ -19,6 +19,7 @@
 
 include_recipe "aybu::user"
 include_recipe "aybu::system"
+include_recipe "aybu::cgroups"
 include_recipe "aybu::database"
 include_recipe "aybu::code"
 include_recipe "aybu::install"

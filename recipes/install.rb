@@ -26,11 +26,10 @@ grp = node["acl"]["hosting"]["group"]
 usr = node['aybu']['system_user']
 config_file = "#{api_dir}/production.ini"
 restart_nginx = "#{node['aybu']['rootdir']}/bin/restart_nginx.sh"
+venv = node['aybu']['venv']
+venv_path = "#{node[:python][:virtualenvs_dir]}/#{venv}"
 
 zmq_conf = node['aybu']['zmq']
-if not zmq_conf['status_pub_addr']
-  zmq_conf['status_pub_addr'] = node['ipaddress']
-end
 
 directory api_dir do
   owner usr
@@ -69,6 +68,50 @@ template config_file do
   )
 end
 
+script "populate_manager_db" do
+  interpreter "bash"
+  user "root"
+  cwd "/tmp"
+  code <<-EOH
+    #{venv_path}/bin/python #{root}/code/aybu-manager/create_initial_data.py #{config_file}
+  EOH
+  action :run
+  not_if "test -f #{root}/code/aybu-manager/.installed__do_not_remove"
+end
 
+file "#{root}/code/aybu-manager/.installed__do_not_remove" do
+  action :create_if_missing
+  owner "root"
+  group "root"
+  mode "0600"
+end
 
+supervisor_program "api_rest" do
+  command "#{venv_path}/bin/uwsgi --ini-paste #{config_file}"
+  stopsignal :INT
+  user 'aybu'
+  autostart true
+  autorestart true
+  action [:enable, :start]
+end
 
+supervisor_program "api_worker" do
+  command "#{venv_path}/bin/aybu_manager_worker #{config_file}"
+  stopsignal :INT
+  user 'aybu'
+  autostart true
+  autorestart true
+  redirect_stderr true
+  stdout_logfile "#{api_logs_dir}/worker.log"
+  action [:enable, :start]
+end
+
+supervisor_group "manager" do
+  programs ["api_rest", "api_worker"]
+end
+
+firewall_rule "aybu_manager_zmq" do
+    port node['aybu']['zmq']['status_pub_port']
+    action :allow
+    protocol :tcp
+end

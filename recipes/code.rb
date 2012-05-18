@@ -23,12 +23,11 @@ chishop = "http://chishop.asidev.net/pypi"
 usr = node['aybu']['system_user']
 grp = node["acl"]["hosting"]["group"]
 
-
 package "libzmq-dev"
 package "imagemagick"
 package "libenchant-dev"
 
-python_virtualenv venv do
+python_virtualenv venv_path do
   action :create
 end
 

@@ -1,0 +1,11 @@
+#!/bin/bash
+for group in $(find /sys/fs/cgroup/<%= @root %> -user <%= @user %> -type d -perm 700)
+do
+	if [[ $group == "/sys/fs/cgroup/<%= @root %>" ]] || [[ $group == "/sys/fs/cgroup<%= @path %>" ]]; 
+	then 
+		continue; 
+	fi
+	chmod g+rwx,o+rx $group
+	find $group -type f -perm -u=w -exec chmod g+w \{\} \;
+	find $group -type f -perm -u=r -exec chmod go+r \{\} \;
+done
