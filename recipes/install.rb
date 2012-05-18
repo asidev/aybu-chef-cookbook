@@ -77,10 +77,10 @@ script "populate_manager_db" do
     #{venv_path}/bin/python #{root}/code/aybu-manager/create_initial_data.py #{config_file}
   EOH
   action :run
-  not_if "test -f #{root}/code/aybu-manager/.installed__do_not_remove"
+  not_if "test -f #{root}/code/aybu-manager/.populated_do_not_remove"
 end
 
-file "#{root}/code/aybu-manager/.installed__do_not_remove" do
+file "#{root}/code/aybu-manager/.populated_do_not_remove" do
   action :create_if_missing
   owner "root"
   group "root"

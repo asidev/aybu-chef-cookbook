@@ -67,9 +67,17 @@ end
     code <<-EOH
       #{venv_path}/bin/pip install --extra-index-url #{chishop} -e ./
     EOH
-    not_if "#{venv_path}/bin/pip freeze | grep #{pkg_name}"
+    not_if "test -f #{repo_path}/.installed_do_not_remove"
     action :run
   end
+
+  file "#{repo_path}/.installed_do_not_remove" do
+    action :create_if_missing
+    owner "root"
+    group "root"
+    mode "0600"
+  end
+  
 end
 
 

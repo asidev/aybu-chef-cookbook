@@ -49,5 +49,3 @@ default['aybu']['varnish']['port'] = "80"
 # override various attributes
 set['supervisor']['admin_group'] = "#{node['aybu']['system_group']}"
 set['nginx']['additional_includes'] = ["#{node['aybu']['rootdir']}/configs/nginx/*.conf"]
-set['nginx']['user'] = node['aybu']['system_user']
-set['nginx']['group'] = node['aybu']['system_group']

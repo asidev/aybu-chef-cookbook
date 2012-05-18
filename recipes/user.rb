@@ -37,6 +37,12 @@ user usr do
   notifies :run, "script[setfacl-#{venv_path}-aybu]", :immediately
 end
 
+group grp do
+  action :modify
+  members [node['nginx']['user']]
+end
+
+
 script "setfacl-#{venv_path}-aybu" do
   action :nothing
   interpreter "bash"
