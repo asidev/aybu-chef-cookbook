@@ -25,12 +25,3 @@ include_recipe "aybu::code"
 include_recipe "aybu::install"
 include_recipe "aybu::utils"
 
-# save passwords to chef-server
-unless Chef::Config[:solo]
-  ruby_block "save node data" do
-    block do
-      node.save
-    end
-    action :create
-  end
-end
