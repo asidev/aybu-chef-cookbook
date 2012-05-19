@@ -1,0 +1,110 @@
+#!/bin/bash
+set -u   # warn (and exit) for unused variables
+set -e   # exit if a command exits with $? != 0
+
+venv_path="<%= node[:python][:virtualenvs_dir] %>"
+code_path="<%= node['aybu']['rootdir'] %>/code"
+user="<%= node['aybu']['system_user'] %>"
+default_venv="<%= node['aybu']['venv'] %>"
+default_venv_path="${venv_path}/${default_venv}"
+aybu_manager_cli=${default_venv_path}/bin/aybu_manager_cli
+virtualenv=$default_venv
+script=$(basename $(realpath $0))
+uwsgi_version="lts"
+branch="default"
+environment=""
+
+function error(){
+	echo $1 >&2
+	echo "exiting..." >&2 
+    exit 1
+}
+
+function usage() {
+	echo "usage: $script [-h] [-v <venv_name>] [-u <uwsgi_version>] [-b branch] -n <environment_name>"
+	echo 
+	echo "Creates the environment <environment_name> in virtualenv <venv_name>"
+	echo "options:"
+	echo -e "  -h:\tshows this help."
+	echo -e "  -n:\taybu environment to create (required)."
+	echo -e "  -v:\twhen creating the environment, use this virtuelenv (defaults to: $virtualenv)."
+	echo -e "  -u:\tset the uwsgi version when creating the virtualenv (defaults to: $uwsgi_version)."
+	echo -e "  -b:\twhich branch to install when creating the virtualenv (defaults to: $branch)."
+	
+	[ $# -eq 1 ] && echo && error "ERROR: $1"
+	exit 0
+}
+
+while getopts ":hv:u:b:n:" opt; do
+	case $opt in
+		h)
+		  usage
+		  ;;
+		n)
+		  environment=$OPTARG
+		  ;;
+		b)
+		  branch=$OPTARG
+		  ;;
+		u)
+		  uwsgi_version=$OPTARG
+		  ;;
+		v)
+		  virtualenv=$OPTARG
+		  ;;
+		\?)
+		  usage "Invalid option -$OPTARG"
+		  ;;
+		:)
+		  usage "-$OPTARG requires an argument"
+		  ;;
+	esac
+done
+
+[ -z $environment ] && usage "Missing environment name"
+virtualenv_path="$venv_path/$virtualenv"
+pip="$virtualenv_path/bin/pip"
+
+# check if we can connect to the api server
+set +e
+$aybu_manager_cli envs_list -v 2>&1 | grep "OK 200 OK" -q
+[ $? -ne 0 ] && error "Cannot connect to the api_server"
+
+# checks if virtualenv exists.
+$aybu_manager_cli envs_list -f 2>&1 | grep "name" | sed s/"^.*: "//g | grep -q $environment
+[ $? -eq 0 ] && error "Environment $environment already exists"
+set -e
+
+if [ ! -d $virtualenv_path ]; then
+	venv_code_path=$code_path/$environment
+	[ -d $venv_code_path ] && error "directory $venv_code_path already exists, but venv does not in $virtualenv_path."
+	echo "Creating virtualenv $virtualenv"
+	virtualenv --distribute $virtualenv_path
+	echo "Creating directory $venv_code_path"
+	mkdir $venv_code_path
+	pushd $venv_code_path &>/dev/null
+	for repo in aybu-core aybu-themes-pyramid aybu-website aybu-controlpanel aybu-manager aybu-manager-cli; do
+		echo "Branching $repo"
+		old_repo_path=$code_path/$repo
+		hg clone $old_repo_path $repo
+		pushd $repo &>/dev/null
+		echo "[$repo] Switching to branch $branch"
+		hg update $branch
+		echo "[$repo] Installing"
+		echo "[$repo] $pip install --extra-index-url http://chishop.asidev.net/pypi -e ./"
+		$pip install --extra-index-url http://chishop.asidev.net/pypi -e ./
+		popd &>/dev/null
+	done
+	popd &>/dev/null
+	echo "Installing additional packages"
+	$pip install http://projects.unbit.it/downloads/uwsgi-${uwsgi_version}.tar.gz
+	$pip install psycopg2
+	echo "Fixing permissions"
+	sudo find $virtualenv_path -type d -print0 | xargs -0 setfacl -m user:${user}:rwx -m default:user:${user}:rwx
+	sudo find $virtualenv_path -type f -print0 | xargs -0 setfacl -m user:${user}:rw
+else
+	echo "Using existing virtualenv $virtualenv"
+fi
+
+echo "Creating the environment using the API server"
+$aybu_manager_cli envs_create -e $virtualenv $environment

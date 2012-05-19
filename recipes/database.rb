@@ -45,3 +45,13 @@ postgresql_database "grant_super_aybu_manager" do
   action :nothing
   sql "ALTER USER aybu_manager WITH SUPERUSER CREATEDB CREATEROLE REPLICATION"
 end
+
+# save passwords to chef-server
+unless Chef::Config[:solo]
+  ruby_block "save node data" do
+    block do
+      node.save
+    end
+    action :create
+  end
+end

@@ -40,7 +40,6 @@ default['aybu']['uwsgi']['stats_server']['instance_base_port'] = 23000
 default['aybu']['uwsgi']['options']['post-buffering'] = 1024
 default['aybu']['uwsgi']['options']['processes'] = 1
 default['aybu']['uwsgi']['options']['threads'] = 5
-default['aybu']['uwsgi']['options']['idle'] = 120
 default['aybu']['uwsgi']['options']['reload-on-rss'] = 96
 
 default['aybu']['varnish']['address'] = "127.0.0.1"

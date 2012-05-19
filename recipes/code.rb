@@ -51,6 +51,7 @@ end
   checkout = "#{node['aybu']['hg']['url']}/#{repo}"
   pkg_name = repo.split("-")[0..1].join("_")
   repo_path = "#{code_dir}/#{repo}"
+  
   hg repo_path do
     repository checkout
     reference node['aybu']['hg']['reference']

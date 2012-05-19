@@ -68,7 +68,7 @@ uwsgi.stats_server.address = <%= @uwsgi_conf['stats_server']['addr'] %>
 uwsgi.bin = %(paths.virtualenv.base)s/%(paths.virtualenv.default)s/bin/uwsgi
 
 nginx.port = <%= node["nginx"]["default_vhost_port"] %>
-nginx.restart.cmd = <%= @restart_nginx %>
+nginx.restart.cmd = sudo <%= @restart_nginx %>
 supervisor.update.cmd = /usr/local/bin/supervisorctl update
 supervisor.command.prefix = <%= node['aybu']['supervisor_prefix'] %>
 proxy.address = <%= node['aybu']['varnish']['address'] %>
@@ -86,8 +86,7 @@ master = true
 post-buffering = <%= @uwsgi_conf['options']['post-buffering'] %>
 processes = <%= @uwsgi_conf['options']['processes'] %>
 threads = <%= @uwsgi_conf['options']['threads'] %>
-idle = <%= @uwsgi_conf['options']['idle'] %>
-reload-on-rss = <%= @uwsgi_conf['options']['reload_on_rss'] %>
+reload-on-rss = <%= @uwsgi_conf['options']['reload-on-rss'] %>
 uid = <%= node['aybu']['system_user'] %>
 gid = <%= node['aybu']['system_group'] %>
 vacuum = true

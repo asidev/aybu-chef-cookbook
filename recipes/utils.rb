@@ -30,3 +30,9 @@ template "#{node['check_mk']['plugins_dir']}/check_aybu" do
   mode 0755
 end
 
+template "/usr/local/bin/create_aybu_env.sh" do
+  source "create_aybu_env.sh.erb"
+  owner "root"
+  group "root"
+  mode 0755
+end
