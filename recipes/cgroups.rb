@@ -33,6 +33,18 @@ controllers.each do |ctrl|
   end
 end
 
+template "/etc/rc.local.d/aybu_create_cgroups.sh" do
+  owner "root"
+  group "root"
+  source "aybu_create_cgroups.sh.erb"
+  mode 0775
+  variables(
+    :user => usr,
+    :group => grp,
+    :root => cgroups
+  )
+end
+
 template "/usr/local/bin/fix_sites_cgroup_perms.sh" do
   owner "root"
   group "root"
