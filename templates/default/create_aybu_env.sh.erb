@@ -101,7 +101,7 @@ if [ ! -d $virtualenv_path ]; then
 	$pip install psycopg2
 	echo "Fixing permissions"
 	sudo find $virtualenv_path -type d -print0 | xargs -0 setfacl -m user:${user}:rwx -m default:user:${user}:rwx
-	sudo find $virtualenv_path -type f -print0 | xargs -0 setfacl -m user:${user}:rw
+	sudo find $virtualenv_path -type f -print0 | xargs -0 setfacl -m user:${user}:rwx
 else
 	echo "Using existing virtualenv $virtualenv"
 fi
