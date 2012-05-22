@@ -57,3 +57,8 @@ cron "dump_aybu_databases" do
   command "/usr/local/bin/dump_aybu_databases.sh -d #{node['aybu']['backup_dir']} &> /var/log/dump_aybu_databases.log"
 end
 
+firewall_rule "api_https" do
+  port 443
+  action :allow
+  protocol :tcp
+end
