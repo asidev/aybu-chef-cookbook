@@ -2,14 +2,9 @@
 
 echo "Creating control groups for AyBU"
 <% node['aybu']['cgroup_controllers'].each do |ctrl| -%>
-<% @node['aybu']['cgroup_rel_path'].split("/").each do |segment| -%>
-<% if segment == "" -%>
-<% next -%>
-<% end -%>
-<% path = "#{@root}/#{ctrl}/#{segment}" -%>
-mkdir <%= path -%> -m 775
+<% path = "#{@root}/#{ctrl}/#{node['aybu']['cgroup_rel_path']}" -%>
+mkdir -p <%= path -%> -m 775
 chown <%= @user -%>:<%= @group -%> <%= path %>
-<% end -%>
 <% end -%>
 sleep 2
 echo "Restarting all processes"
