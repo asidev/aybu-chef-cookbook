@@ -40,7 +40,7 @@ paths.configs.nginx = %(paths.configs)s/nginx
 paths.configs.supervisor = %(paths.configs)s/supervisor
 paths.sites = %(paths.root)s/sites
 paths.archives = %(paths.root)s/archives
-paths.cgroups = /sys/fs/cgroup
+paths.cgroups = <%= node['cgroups']['basepath'] %>
 paths.cgroups.controllers = <%= node['aybu']['cgroup_controllers'].join(", ") %>
 paths.cgroups.relative_path = <%= node['aybu']['cgroup_rel_path'] %>
 paths.logs = %(paths.root)s/logs

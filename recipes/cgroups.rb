@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cgroups = "/sys/fs/cgroup"
+cgroups = node['cgroups']['basepath']
 controllers = node['aybu']['cgroup_controllers']
 path = node['aybu']['cgroup_rel_path']
 usr = node['aybu']['system_user']
