@@ -19,7 +19,7 @@
 code_dir = "#{node['aybu']['rootdir']}/code"
 venv = node['aybu']['venv']
 venv_path = "#{node[:python][:virtualenvs_dir]}/#{venv}"
-chishop = "http://chishop.asidev.net/pypi"
+chishop = "http://chishop.asidev.net/simple"
 usr = node['aybu']['system_user']
 grp = node["acl"]["hosting"]["group"]
 
