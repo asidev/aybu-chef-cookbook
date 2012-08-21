@@ -44,8 +44,11 @@ done
 
 psql=$(which psql)
 pg_dump=$(which pg_dump)
+pg_dumpall=$(which pg_dumpall)
 sudo=$(which sudo)
 psql_get="$sudo -u postgres $psql aybu_manager -A -t "
+
+rm -f $backup_dir/*.xz
 
 ids=$(echo "select id from instances order by id asc" | $psql_get)
 for id in $ids; do
@@ -57,3 +60,4 @@ for id in $ids; do
    sudo -u postgres $pg_dump $database | xz -c -0 - > $filepath
 done
 sudo -u postgres $pg_dump aybu_manager | xz -c -0 - > $backup_dir/aybu_manager.sql.xz
+sudo -u postgres $pg_dumpall -g | xz -c -0 - > $backup_dir/aybu_roles.sql.xz
