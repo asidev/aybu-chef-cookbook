@@ -1,0 +1,29 @@
+# created by chef. Do not edit
+sub vcl_recv {
+	# static and favicons should never have cookies in request.
+    if (req.url ~ "^/static" || req.url == "/favicon.ico") {
+        remove req.http.Cookie;
+    } else {
+            if (req.http.Cookie) {
+
+                    # first, put ; in front of the cookie string so that it is homogeneous
+                    set req.http.Cookie = ";"+req.http.Cookie;
+
+                    # remove all spaces after ;
+                    set req.http.Cookie = regsuball(req.http.Cookie, "; +", ";");
+
+                    # put a space in front of the cookie that's *not* going to be removed
+                    # only keep aybu cookies. This is named as req.http.host.
+                    set req.http.Cookie = regsuball(req.http.Cookie, ";([a-z0-9.]+.[a-z0-9]{2,4})=", "; \1=");
+
+                    # remove all cookies without spaces after ;
+                    set req.http.Cookie = regsuball(req.http.Cookie, ";[^ ][^;]*", "");
+                    set req.http.Cookie = regsuball(req.http.Cookie, "^[; ]+|[; ]+$", "");
+
+                    # remove empty cookies
+                    if (req.http.Cookie == "") {
+                        remove req.http.Cookie;
+                    }
+            }
+    }
+}
