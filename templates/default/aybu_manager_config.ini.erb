@@ -117,7 +117,7 @@ sqlalchemy.echo = false
 setup = aybu.manager.utils.pshell:setup
 
 [loggers]
-keys = root, aybu, alembic, sqlalchemy
+keys = root, aybu, alembic, sqlalchemy, httpcachepurger
 
 [handlers]
 keys = console, file
@@ -133,6 +133,11 @@ handlers = file
 level = DEBUG
 handlers =
 qualname = aybu
+
+[logger_httpcachepurger]
+level = DEBUG
+handlers =
+qualname = httpcachepurger
 
 [logger_sqlalchemy]
 level = WARN
