@@ -17,8 +17,10 @@
 # limitations under the License.
 
 additional_includes = node['varnish']['additional_includes']
-additional_includes << "aybu.vcl"
-node.set['varnish']['additional_includes'] = additional_includes
+if not additional_includes.include? "aybu.vcl"
+  additional_includes << "aybu.vcl"
+  node.set['varnish']['additional_includes'] = additional_includes
+end
 
 template "#{node["varnish"]["dir"]}/aybu.vcl" do
   source "aybu.vcl.erb"
