@@ -108,32 +108,76 @@ directory "#{configs}/supervisor" do
   action :create
 end
 
-link "#{node['supervisor']['dir']}/aybu" do
-  to "#{configs}/supervisor"
-end
+case node['aybu']['process_manager']
+when "supervisor"
+  link "#{node['supervisor']['dir']}/aybu" do
+    to "#{configs}/supervisor"
+  end
 
-supervisor_program "api_rest" do
-  command "#{venv_path}/bin/uwsgi --ini-paste #{config_file}"
-  stopsignal :INT
-  user 'aybu'
-  autostart true
-  autorestart true
-  action [:enable, :start]
-end
+  supervisor_program "api_rest" do
+    command "#{venv_path}/bin/uwsgi --ini-paste #{config_file}"
+    stopsignal :INT
+    user 'aybu'
+    autostart true
+    autorestart true
+    action [:enable, :start]
+  end
 
-supervisor_program "api_worker" do
-  command "#{venv_path}/bin/aybu_manager_worker #{config_file}"
-  stopsignal :INT
-  user 'aybu'
-  autostart true
-  autorestart true
-  redirect_stderr true
-  stdout_logfile "#{api_logs_dir}/worker.log"
-  action [:enable, :start]
-end
+  supervisor_program "api_worker" do
+    command "#{venv_path}/bin/aybu_manager_worker #{config_file}"
+    stopsignal :INT
+    user 'aybu'
+    autostart true
+    autorestart true
+    redirect_stderr true
+    action [:enable, :start]
+  end
 
-supervisor_group "manager" do
-  programs ["api_rest", "api_worker"]
+  supervisor_group "manager" do
+    programs ["api_rest", "api_worker"]
+  end
+
+when "upstart"
+  directory "/etc/init" do
+    user "root"
+    group node["acl"]["hosting"]["group"]
+    mode 0775
+  end
+
+  {'api_worker' => 'aybu_manager_worker',
+   'api_server' => 'uwsgi --die-on-term --ini-paste'}.each do |srv, cmd|
+    template "/etc/init/aybu_#{srv}.conf" do
+      source "#{srv}.upstart.erb"
+      owner "root"
+      group "root"
+      mode 0644
+      variables(
+        :cmd => "#{venv_path}/bin/#{cmd}",
+        :config_file => config_file
+      )
+    end
+
+    link "/etc/init.d/aybu_#{srv}" do
+      to "/lib/init/upstart-job"
+    end
+
+    service "aybu_#{srv}" do
+      action [:enable, :start]
+    end
+  end
+
+  #install the upstart script to create cgroups
+  template "/etc/init/aybu_create_cgroups.conf" do
+    owner "root"
+    group "root"
+    source "aybu_create_cgroups.upstart.erb"
+    variables(
+      :user => usr,
+      :group => grp,
+      :root => node['cgroups']['basepath']
+    )
+  end
+
 end
 
 firewall_rule "aybu_manager_zmq" do

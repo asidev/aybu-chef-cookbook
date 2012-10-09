@@ -1,3 +1,8 @@
 Cmnd_Alias      NGINXRELOAD = <%= @script %>
 
+<% if node['aybu']['process_manager'] == 'upstart' -%>
+Cmnd_Alias		INITCTL = /sbin/initctl
+<%= @user %> ALL=NOPASSWD: NGINXRELOAD, INITCTL
+<% else -%>
 <%= @user %> ALL=NOPASSWD: NGINXRELOAD
+<% end -%>

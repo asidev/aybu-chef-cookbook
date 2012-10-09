@@ -1,0 +1,9 @@
+description "Aybu API worker"
+start on runlevel [2345]
+stop on runlevel [06]
+setuid aybu
+
+respawn
+respawn limit 10 5
+
+exec <%= @cmd %> <%= @config_file %>

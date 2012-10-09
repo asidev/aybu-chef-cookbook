@@ -1,12 +1,12 @@
-#/bin/bash
+description "Aybu create cgroups"
+start on runlevel [2345]
 
-echo "Creating control groups for AyBU"
+task
+
+script
 <% node['aybu']['cgroup_controllers'].each do |ctrl| -%>
 <% path = "#{@root}/#{ctrl}/#{node['aybu']['cgroup_rel_path']}" -%>
 mkdir -p <%= path -%> -m 775
 chown <%= @user -%>:<%= @group -%> <%= path %>
 <% end -%>
-sleep 2
-
-echo "Restarting all processes"
-/usr/local/bin/supervisorctl restart all
+end script

@@ -14,7 +14,16 @@ default['aybu']['smtp_host'] = "localhost"
 default['aybu']['smtp_port'] = "25"
 default['aybu']['cgroup_rel_path'] = "/sites/aybu"
 default['aybu']['cgroup_controllers'] = ['cpu', 'blkio', 'memory']
+
+case platform
+when "ubuntu"
+  default['aybi']['process_manager'] = 'upstart'
+else
+  default['aybi']['process_manager'] = 'supervisor'
+end
+
 default['aybu']['supervisor_prefix'] = 'aybu_env'
+default['aybu']['upstart_prefix'] = 'aybu'
 
 default['aybu']['zmq']['queue_addr'] = "127.0.0.1"
 default['aybu']['zmq']['daemon_addr'] = "127.0.0.1"

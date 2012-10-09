@@ -38,6 +38,7 @@ paths.configs = %(paths.root)s/configs
 paths.configs.uwsgi = %(paths.configs)s/uwsgi
 paths.configs.nginx = %(paths.configs)s/nginx
 paths.configs.supervisor = %(paths.configs)s/supervisor
+paths.configs.upstart = /etc/init
 paths.sites = %(paths.root)s/sites
 paths.archives = %(paths.root)s/archives
 paths.cgroups = <%= node['cgroups']['basepath'] %>
@@ -69,12 +70,20 @@ uwsgi.bin = %(paths.virtualenv.base)s/%(paths.virtualenv.default)s/bin/uwsgi
 
 nginx.port = <%= node["nginx"]["default_vhost_port"] %>
 nginx.restart.cmd = sudo <%= @restart_nginx %>
-supervisor.update.cmd = /usr/local/bin/supervisorctl update
-supervisor.command.prefix = <%= node['aybu']['supervisor_prefix'] %>
 proxy.address = <%= node['aybu']['varnish']['address'] %>
 proxy.port = <%= node['aybu']['varnish']['port'] %>
 # True or False: must be python bool literals
 proxy.enabled = True
+
+supervisor.enabled = <%= node['aybu']['process_manager'] == 'supervisor' ? "true" : "false" %>
+supervisor.update.cmd = /usr/local/bin/supervisorctl update
+supervisor.command.prefix = <%= node['aybu']['supervisor_prefix'] %>
+
+upstart.enabled = <%= node['aybu']['process_manager'] == 'upstart' ? "true" : "false" %>
+upstart.prefix = <%= node['aybu']['upstart_prefix'] %>
+upstart.start.cmd = sudo /sbin/initctl start
+upstart.stop.cmd = sudo /sbin/initctl stop
+upstart.restart.cmd = sudo /sbin/initctl restart
 
 [uwsgi]
 instance_dir = <%= node['aybu']['rootdir'] %>/sites/<%= node['aybu']['api_domain'] %>
