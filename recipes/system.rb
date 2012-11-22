@@ -62,3 +62,7 @@ firewall_rule "api_https" do
   action :allow
   protocol :tcp
 end
+
+node['aybu']['dicts'].each do |dict|
+  package "aspell-#{dict}"
+end

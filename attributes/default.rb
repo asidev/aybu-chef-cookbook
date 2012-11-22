@@ -14,6 +14,7 @@ default['aybu']['smtp_host'] = "localhost"
 default['aybu']['smtp_port'] = "25"
 default['aybu']['cgroup_rel_path'] = "/sites/aybu"
 default['aybu']['cgroup_controllers'] = ['cpu', 'blkio', 'memory']
+default['aybu']['dicts'] = ['it', 'en', 'fr', 'de', 'es']
 
 case platform
 when "ubuntu"
