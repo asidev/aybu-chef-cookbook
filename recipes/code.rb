@@ -47,17 +47,16 @@ python_pip "uWSGI" do
   virtualenv venv_path
 end
 
-%w{aybu-core aybu-themes-pyramid aybu-website aybu-controlpanel aybu-manager aybu-manager-cli}.each do |repo|
+%w{aybu-core aybu-themes aybu-website aybu-controlpanel aybu-manager aybu-manager-cli}.each do |repo|
   checkout = "#{node['aybu']['hg']['url']}/#{repo}"
   pkg_name = repo.split("-")[0..1].join("_")
   repo_path = "#{code_dir}/#{repo}"
-  
-  hg repo_path do
-    repository checkout
-    reference node['aybu']['hg']['reference']
-    key "#{node['aybu']['rootdir']}/.ssh/id_rsa"
-    action :clone
-    owner usr
+
+  git "#{code_dir}/#{repo}" do
+    repository "git://github.com/asidev/#{repo}.git"
+    reference "master"
+    action :sync
+    user usr
     group grp
   end
 
@@ -66,7 +65,7 @@ end
     user "root"
     cwd repo_path
     code <<-EOH
-      #{venv_path}/bin/pip install --extra-index-url #{chishop} -e ./
+      #{venv_path}/bin/pip install -e ./
     EOH
     not_if "test -f #{repo_path}/.installed_do_not_remove"
     action :run
@@ -78,10 +77,5 @@ end
     group "root"
     mode "0600"
   end
-  
+
 end
-
-
-
-
-
